@@ -8,6 +8,8 @@
 .idea/
 *.iml
 
+.gradle/
+
 # BlueJ files
 *.ctxt
 
