@@ -46,7 +46,7 @@ public abstract class AuthenticationCommand extends Command{
         ContentResponse response = getManager().sendPOSTRequest(url, params,false);
 
         if (response.getStatus() != 200) {
-            ConsoleUtils.printError(response.getReason());
+            ConsoleUtils.printError(response.getContentAsString());
         } else {
             return response.getContentAsString();
         }

@@ -29,5 +29,7 @@ public class App {
         } catch (IOException e) {
             ConsoleUtils.printError("Error while reading the input.");
         }
+
+        System.exit(0);
     }
 }

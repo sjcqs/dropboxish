@@ -4,7 +4,6 @@ import com.dropboxish.client.command.*;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.client.util.StringContentProvider;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -45,7 +44,7 @@ public class LoginManager implements Stoppable {
      * A {@link CommandParser} to parse input commands
      */
     private final CommandParser parser;
-    private boolean stopped = false;
+    private boolean over = false;
     private String token = null;
     private Logger logger = Logger.getLogger("client");
     private BufferedReader reader;
@@ -72,7 +71,7 @@ public class LoginManager implements Stoppable {
         ConsoleUtils.printShifted("");
         ConsoleUtils.printTitle("Login into the application.");
         ConsoleUtils.printShifted("You need to login before using the application.");
-        while (!stopped && !isConnected()) {
+        while (!over && !isConnected()) {
             try {
                 ConsoleUtils.printPrompt(">");
                 command = parser.readCommand();
@@ -81,13 +80,17 @@ public class LoginManager implements Stoppable {
                 } else {
                     stop();
                 }
+
+                if (token != null){
+                    over = true;
+                }
             } catch (IOException e) {
                 stop();
                 logger.warning("Error: " + e.getMessage());
             }
         }
 
-        if (!stopped && isConnected()){
+        if (isConnected()){
             connectionListener.connected();
         } else {
             connectionListener.stop();
@@ -100,7 +103,7 @@ public class LoginManager implements Stoppable {
 
     @Override
     public void stop() {
-        stopped = true;
+        over = true;
         try {
             client.stop();
         } catch (Exception ignored) {

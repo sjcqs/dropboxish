@@ -47,7 +47,6 @@ public class Client implements Runnable, Stoppable {
 
     @Override
     public void run() {
-        stopped = false;
         ConsoleUtils.printAppInfo();
         LoginManager loginManager;
         try {
@@ -69,13 +68,15 @@ public class Client implements Runnable, Stoppable {
                         if (command != null) {
                             command.run();
                         } else {
-                            stop();
+                            logger.info("Quit");
+                            Client.this.stop();
                         }
                     } catch (IOException e) {
                         logger.warning("Error: " + e.getMessage());
-                        stop();
+                        Client.this.stop();
                     }
                 }
+
             }
 
             @Override

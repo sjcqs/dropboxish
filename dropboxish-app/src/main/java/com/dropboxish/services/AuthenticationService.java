@@ -45,11 +45,10 @@ public class AuthenticationService {
             return Response.ok(token).build();
 
         } catch (IllegalArgumentException e) {
-            logger.severe(e.getMessage());
-            e.printStackTrace();
+            logger.warning(e.getMessage());
             return Response.status(Response.Status.FORBIDDEN).entity("Login/password is/are wrong.").build();
         } catch (SQLException | UnsupportedEncodingException e) {
-            logger.severe(e.getMessage());
+            logger.warning(e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Error issuing the token").build();
         }
     }
@@ -79,7 +78,7 @@ public class AuthenticationService {
             }
 
         } catch (Exception e) {
-            logger.severe(e.getMessage());
+            logger.warning(e.getMessage());
             e.printStackTrace();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
         }
