@@ -24,11 +24,11 @@ public class DownloadFileCommand extends ClientCommand {
         }
         ConsoleUtils.printTitle("DOWNLOAD");
         //TODO implementation
-        ConsoleUtils.printLines("Downloading file",args.get(0));
+        ConsoleUtils.printShifted("Downloading file",args.get(0));
     }
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("download FILE", "Download a file from the cloud.");
+        ConsoleUtils.printShifted("download FILE", "Download a file from the cloud.");
     }
 }

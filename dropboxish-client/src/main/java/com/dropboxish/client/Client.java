@@ -5,8 +5,8 @@ import com.dropboxish.client.utils.ConsoleUtils;
 import com.dropboxish.client.utils.Stoppable;
 import com.dropboxish.client.utils.LoginManager;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.logging.Logger;
 
 /**
@@ -18,17 +18,23 @@ public class Client implements Runnable, Stoppable {
     private static Client instance = null;
 
     private final CommandParser parser;
+    private final BufferedReader reader;
     private boolean stopped = false;
+    private String serverUrl;
+    private int serverPort;
 
 
-    public static Client getInstance() {
+    public static Client getInstance(BufferedReader reader, String url, int port) {
         if (instance == null){
-            instance = new Client();
+            instance = new Client(reader, url, port);
         }
         return instance;
     }
 
-    private Client(){
+    private Client(BufferedReader reader, String url, int port){
+        this.reader = reader;
+        this.serverUrl = url;
+        this.serverPort = port;
         Command[] commands = new Command[]{
                 new UploadFileCommand(this),
                 new DownloadFileCommand(this),
@@ -36,22 +42,29 @@ public class Client implements Runnable, Stoppable {
                 new SearchFilesCommand(this),
                 new ExitCommand(this)
         };
-        parser = new CommandParser(new InputStreamReader(System.in), commands, new HelpCommand(commands));
-
+        parser = new CommandParser(reader, commands, new HelpCommand(commands));
     }
 
     @Override
     public void run() {
         stopped = false;
         ConsoleUtils.printAppInfo();
-        LoginManager loginManager = LoginManager.getInstance();
+        LoginManager loginManager;
+        try {
+            loginManager = LoginManager.getInstance(reader, serverUrl, serverPort);
+        } catch (Exception e) {
+            ConsoleUtils.printError("Error creating a socket.");
+            return;
+        }
+
         loginManager.connect(new LoginManager.ConnectionListener(){
             @Override
             public void connected() {
                 Command command;
+                ConsoleUtils.printAppInfo();
                 while (!stopped) {
                     try {
-                        System.out.print("> ");
+                        ConsoleUtils.printPrompt(">");
                         command = parser.readCommand();
                         if (command != null) {
                             command.run();
@@ -75,11 +88,6 @@ public class Client implements Runnable, Stoppable {
     @Override
     public void stop() {
         stopped = true;
-        try {
-            parser.close();
-        } catch (IOException e) {
-            logger.warning(e.getMessage());
-        }
     }
 
 }

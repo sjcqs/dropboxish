@@ -20,6 +20,6 @@ public class UploadFileCommand extends ClientCommand {
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("upload FILE", "Upload a file to the cloud");
+        ConsoleUtils.printShifted("upload FILE", "Upload a file to the cloud");
     }
 }
