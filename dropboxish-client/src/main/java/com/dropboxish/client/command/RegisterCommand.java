@@ -1,7 +1,7 @@
 package com.dropboxish.client.command;
 
+import com.dropboxish.client.Client;
 import com.dropboxish.client.utils.ConsoleUtils;
-import com.dropboxish.client.utils.LoginManager;
 
 /**
  * Created by satyan on 11/22/17.
@@ -9,21 +9,20 @@ import com.dropboxish.client.utils.LoginManager;
  * usage: register USERNAME
  */
 public class RegisterCommand extends AuthenticationCommand {
-    public final static String URL = "/user/register";
+    public final static String PATH = "/user/register";
 
-    public RegisterCommand(LoginManager manager){
-        super(manager,"register");
+    public RegisterCommand(Client client){
+        super("register", client, PATH);
     }
 
     @Override
-    public void run() throws IllegalArgumentException {
+    public void run() throws CommandIllegalArgumentException {
         if (args.size() != 1){
-            ConsoleUtils.printError(
+            throw new CommandIllegalArgumentException(
                     "Wrong usage of register command",
                     "usage: register USERNAME");
-            return;
         }
-        String token = sendAuthenticationRequest(URL);
+        String token = sendAuthenticationRequest();
         if (token != null){
             ConsoleUtils.print("You are registered.","Use login command to log in.");
         }

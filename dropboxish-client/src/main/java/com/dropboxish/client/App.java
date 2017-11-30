@@ -17,11 +17,7 @@ public class App {
             ConsoleUtils.printError("Dropboxish address expected");
             System.exit(-1);
         }
-
         String host = args[0];
-        if (!host.startsWith("http://")){
-            host = "http://" + host;
-        }
 
         try(BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
             Client client = Client.getInstance(reader, host, 8080);

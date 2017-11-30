@@ -3,7 +3,7 @@ package com.dropboxish.client;
 import com.dropboxish.client.command.*;
 import com.dropboxish.client.utils.ConsoleUtils;
 import com.dropboxish.client.utils.Stoppable;
-import com.dropboxish.client.utils.LoginManager;
+import com.dropboxish.client.utils.RequestManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,6 +22,7 @@ public class Client implements Runnable, Stoppable {
     private boolean stopped = false;
     private String serverUrl;
     private int serverPort;
+    private RequestManager requestManager;
 
 
     public static Client getInstance(BufferedReader reader, String url, int port) {
@@ -40,6 +41,7 @@ public class Client implements Runnable, Stoppable {
                 new DownloadFileCommand(this),
                 new ListFilesCommand(this),
                 new SearchFilesCommand(this),
+                new RemoveFileCommand(this),
                 new ExitCommand(this)
         };
         parser = new CommandParser(reader, commands, new HelpCommand(commands));
@@ -48,35 +50,16 @@ public class Client implements Runnable, Stoppable {
     @Override
     public void run() {
         ConsoleUtils.printAppInfo();
-        LoginManager loginManager;
         try {
-            loginManager = LoginManager.getInstance(reader, serverUrl, serverPort);
+            requestManager = RequestManager.getInstance(this, serverUrl, serverPort);
         } catch (Exception e) {
             ConsoleUtils.printError("Error creating a socket.");
             return;
         }
-
-        loginManager.connect(new LoginManager.ConnectionListener(){
+        requestManager.connect(new RequestManager.ConnectionListener(){
             @Override
             public void connected() {
-                Command command;
-                ConsoleUtils.printAppInfo();
-                while (!stopped) {
-                    try {
-                        ConsoleUtils.printPrompt(">");
-                        command = parser.readCommand();
-                        if (command != null) {
-                            command.run();
-                        } else {
-                            logger.info("Quit");
-                            Client.this.stop();
-                        }
-                    } catch (IOException e) {
-                        logger.warning("Error: " + e.getMessage());
-                        Client.this.stop();
-                    }
-                }
-
+                startApp();
             }
 
             @Override
@@ -86,9 +69,38 @@ public class Client implements Runnable, Stoppable {
         });
     }
 
+    private void startApp() {
+        Command command;
+        ConsoleUtils.printAppInfo();
+        while (!stopped) {
+            try {
+                ConsoleUtils.printPrompt(">");
+                command = parser.readCommand();
+                if (command != null) {
+                    command.run();
+                } else {
+                    logger.info("Quit");
+                    Client.this.stop();
+                }
+            } catch (CommandIllegalArgumentException e){
+                ConsoleUtils.printError(e.getLines());
+            } catch (IOException e) {
+                logger.warning("Error: " + e.getMessage());
+                Client.this.stop();
+            }
+        }
+    }
+
     @Override
     public void stop() {
         stopped = true;
     }
 
+    public RequestManager getRequestManager() {
+        return requestManager;
+    }
+
+    public BufferedReader getReader() {
+        return reader;
+    }
 }

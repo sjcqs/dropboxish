@@ -1,22 +1,39 @@
 package com.dropboxish.client.command;
 
+import com.dropboxish.client.Client;
+
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Created by satyan on 11/21/17.
- * A simple command that can be executed
+ * Created by satyan on 11/22/17.
+ * Command executed when the client is authenticated
  */
-public abstract class Command {
-    protected List<String> args = new LinkedList<>();
+public abstract class Command implements Runnable{
+    /**
+     * {@link Client} used facultative
+     */
+    private Client client;
     /**
      * the name of this {@link Command}, write by the user to be run.
      */
     private final String name;
 
-    protected Command(String name) {
+    public Command(String name) {
         this.name = name.trim();
     }
+
+    protected Command(String name, Client client) {
+        this(name);
+        this.client = client;
+    }
+
+    protected Client getClient() {
+        return client;
+    }
+
+    protected List<String> args = new LinkedList<>();
+
 
     /**
      * Return the {@link Command#name} of this command
@@ -45,9 +62,10 @@ public abstract class Command {
 
     /**
      * Run the {@link Command}
-     * @throws IllegalArgumentException if the arguments are invalid
+     * @throws CommandIllegalArgumentException if the arguments are invalid
      */
-    public abstract void run() throws IllegalArgumentException;
+    @Override
+    public abstract void run() throws CommandIllegalArgumentException;
 
     /**
      * Print the help for this {@link Command}

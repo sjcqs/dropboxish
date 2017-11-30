@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 /**
  * Created by satyan on 11/21/17.
+ * Exit the app
  */
 public class ExitCommand extends Command {
     private static final Logger logger = Logger.getLogger("client");

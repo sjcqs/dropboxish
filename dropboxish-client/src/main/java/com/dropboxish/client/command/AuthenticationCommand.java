@@ -1,8 +1,10 @@
 package com.dropboxish.client.command;
 
+import com.dropboxish.client.Client;
 import com.dropboxish.client.utils.ConsoleUtils;
-import com.dropboxish.client.utils.LoginManager;
+import com.dropboxish.client.utils.RequestManager;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpMethod;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,20 +15,19 @@ import java.util.Map;
  * Created by satyan on 11/22/17.
  *
  */
-public abstract class AuthenticationCommand extends Command{
-    private final LoginManager manager;
+public abstract class AuthenticationCommand extends RestCommand{
+    private final RequestManager manager;
 
-    protected AuthenticationCommand(LoginManager loginManager, String name) {
-        super(name);
-        this.manager = loginManager;
+    protected AuthenticationCommand(String name, Client client, String path) {
+        super(name, client, path, HttpMethod.POST, false);
+        this.manager = client.getRequestManager();
     }
 
-    protected String sendAuthenticationRequest(String url){
-
+    protected String sendAuthenticationRequest(){
         String username = args.get(0);
         String password;
         try{
-            BufferedReader reader = getManager().getReader();
+            BufferedReader reader = getClient().getReader();
             ConsoleUtils.printPrompt("password:");
             String line = reader.readLine();
             System.out.println(line);
@@ -36,25 +37,17 @@ public abstract class AuthenticationCommand extends Command{
             }
             password = line;
         } catch (IOException e) {
-            ConsoleUtils.printError("Unexpected error when reading the password.");
-            return null;
+            throw new CommandIllegalArgumentException("Unexpected error when reading the password.");
         }
 
         Map<String, String> params = new HashMap<>();
         params.put("username", username);
         params.put("password",password);
-        ContentResponse response = getManager().sendPOSTRequest(url, params,false);
-
-        if (response.getStatus() != 200) {
-            ConsoleUtils.printError(response.getContentAsString());
-        } else {
-            return response.getContentAsString();
-        }
-
-        return null;
+        ContentResponse response = sendRequest(params);
+        return response.getContentAsString();
     }
 
-    protected LoginManager getManager() {
+    protected RequestManager getManager() {
         return manager;
     }
 }

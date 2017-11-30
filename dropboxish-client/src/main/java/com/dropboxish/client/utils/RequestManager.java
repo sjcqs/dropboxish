@@ -1,15 +1,16 @@
 package com.dropboxish.client.utils;
 
+import com.dropboxish.client.Client;
 import com.dropboxish.client.command.*;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -19,49 +20,54 @@ import java.util.logging.Logger;
  * Created by satyan on 11/22/17.
  * Handle the authentication of the user
  */
-public class LoginManager implements Stoppable {
-
+public class RequestManager implements Stoppable {
+    private static final Logger logger = Logger.getLogger("httpClient");
     private static final String DEFAULT_URL = "http://localhost";
     private static final int DEFAULT_PORT = 2222;
-    private final HttpClient client;
+
+    private final HttpClient httpClient;
     private String serverUrl = DEFAULT_URL;
+
     private int serverPort = DEFAULT_PORT;
 
     /**
-     * Singleton for {@link LoginManager}
+     * Singleton for {@link RequestManager}
      */
-    private static LoginManager instance;
-
-    /**
-     * The list of executable {@link Command} for the {@link LoginManager}
-     */
-    private final Command[] commands = new Command[]{
-            new LoginCommand(this),
-            new RegisterCommand(this),
-            new ExitCommand(this)
-    };
+    private static RequestManager instance;
     /**
      * A {@link CommandParser} to parse input commands
      */
     private final CommandParser parser;
-    private boolean over = false;
+
+    private boolean stopped = false;
+    /**
+     * Token use by JWT to authenticate when using the Rest/API
+     */
     private String token = null;
-    private Logger logger = Logger.getLogger("client");
+    /**
+     * A {@link BufferedReader} to read the user input
+     */
     private BufferedReader reader;
 
-    private LoginManager(BufferedReader reader, String url, int port) throws Exception {
-        this.reader = reader;
+    private RequestManager(Client client, String url, int port) throws Exception {
+        final Command[] commands = new Command[]{
+                new LoginCommand(client),
+                new RegisterCommand(client),
+                new ExitCommand(this)
+        };
+
+        this.reader = client.getReader();
         parser = new CommandParser(reader, commands, new HelpCommand(commands));
         SslContextFactory sslContextFactory = new SslContextFactory();
-        client = new HttpClient(sslContextFactory);
+        this.httpClient = new HttpClient(sslContextFactory);
         serverUrl = url;
         serverPort = port;
-        client.start();
+        this.httpClient.start();
     }
 
-    public static LoginManager getInstance(BufferedReader reader, String url, int port) throws Exception {
+    public static RequestManager getInstance(Client client, String url, int port) throws Exception {
         if (instance == null){
-            instance = new LoginManager(reader, url, port);
+            instance = new RequestManager(client, url, port);
         }
         return instance;
     }
@@ -71,7 +77,7 @@ public class LoginManager implements Stoppable {
         ConsoleUtils.printShifted("");
         ConsoleUtils.printTitle("Login into the application.");
         ConsoleUtils.printShifted("You need to login before using the application.");
-        while (!over && !isConnected()) {
+        while (!stopped && !isConnected()) {
             try {
                 ConsoleUtils.printPrompt(">");
                 command = parser.readCommand();
@@ -81,10 +87,12 @@ public class LoginManager implements Stoppable {
                     stop();
                 }
 
-                if (token != null){
-                    over = true;
+                if (token != null) {
+                    stopped = true;
                 }
-            } catch (IOException e) {
+            } catch (CommandIllegalArgumentException e){
+                ConsoleUtils.printError(e.getLines());
+            }catch (IOException e) {
                 stop();
                 logger.warning("Error: " + e.getMessage());
             }
@@ -103,9 +111,9 @@ public class LoginManager implements Stoppable {
 
     @Override
     public void stop() {
-        over = true;
+        stopped = true;
         try {
-            client.stop();
+            httpClient.stop();
         } catch (Exception ignored) {
             // Don't care we are exiting
         }
@@ -115,47 +123,44 @@ public class LoginManager implements Stoppable {
         return token != null;
     }
 
-    public BufferedReader getReader() {
-        return reader;
-    }
-
     public interface ConnectionListener {
         void connected();
         void stop();
-    }
-
-    public String getToken() {
-        return token;
     }
 
     public void setToken(String token) {
         this.token = token;
     }
 
+    private Request newRequest(){
+        return httpClient.newRequest(serverUrl, serverPort);
+    }
+
     private void setHeader(Request request) {
-        request.header("Bearer:", token);
+        request.header(HttpHeader.AUTHORIZATION, "Bearer " + token);
     }
 
-    public ContentResponse sendGETRequest(String path, boolean useToken){
-        try {
-            return client.GET(URI.create(serverUrl + ":" + serverPort+ path));
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            ConsoleUtils.printDebug(e.getMessage());
-            // TODO fix this shitty message
+    private void setParams(Request request, Map<String, String> params){
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            request.param(entry.getKey(),entry.getValue());
         }
-        return null;
     }
 
-    public ContentResponse sendPOSTRequest(String path, Map<String,String> params, boolean useToken){
+    public ContentResponse sendRequest(String path, Map<String, String> params, HttpMethod method, boolean useToken){
         try {
-            Request request = client.POST(URI.create(serverUrl + ":" + serverPort + path));
-            //request.path(path);
-            request.header(HttpHeader.CONTENT_TYPE, "application/json");
+            Request request = newRequest();
 
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                request.param(entry.getKey(),entry.getValue());
+            request.path(path);
+            request.method(method);
+
+            // params
+            if (params != null){
+                setParams(request, params);
             }
+            // Headers
+            request.header(HttpHeader.CONTENT_TYPE, "application/json");
             if (useToken){
+                // NOTICE could use cookies instead but won't bother
                 setHeader(request);
             }
             return request.send();

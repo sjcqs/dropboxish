@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 public class AuthenticationFilter implements ContainerRequestFilter {
+    private static final Logger logger = Logger.getLogger("authentication");
     private static final String REALM = "dropboxish";
     private static final String AUTHENTICATION_SCHEME = "Bearer";
-    private static final Logger logger = Logger.getLogger("authentification");
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
@@ -93,12 +93,14 @@ public class AuthenticationFilter implements ContainerRequestFilter {
 
     private void abortWithUnauthorized(ContainerRequestContext requestContext) {
 
+        logger.warning("Unauthorized access");
         // Abort the filter chain with a 401 status code response
         // The WWW-Authenticate header is sent along with the response
         requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
                         .header(HttpHeaders.WWW_AUTHENTICATE,
                                 AUTHENTICATION_SCHEME + " realm=\"" + REALM + "\"")
+                        .entity("You must be authenticated to use this command.")
                         .build());
     }
 

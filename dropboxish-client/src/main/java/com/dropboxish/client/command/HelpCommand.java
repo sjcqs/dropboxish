@@ -14,7 +14,7 @@ public class HelpCommand extends Command {
     }
 
     @Override
-    public void run() throws IllegalArgumentException {
+    public void run() throws CommandIllegalArgumentException {
         ConsoleUtils.printAppInfo();
         ConsoleUtils.printTitle("COMMANDS");
         for (Command command : commands) {
