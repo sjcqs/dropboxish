@@ -19,4 +19,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.9.1'
     compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.9.1'
+    compile "org.eclipse.jetty:jetty-client:9.4.7.v20170914"
+    compile "org.eclipse.jetty:jetty-util:9.4.7.v20170914"
 }

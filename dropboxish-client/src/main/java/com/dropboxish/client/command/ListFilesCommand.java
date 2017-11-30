@@ -19,6 +19,6 @@ public class ListFilesCommand extends ClientCommand {
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("list","List available files (both locally and in the cloud)");
+        ConsoleUtils.printShifted("list","List available files (both locally and in the cloud)");
     }
 }

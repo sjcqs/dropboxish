@@ -24,6 +24,6 @@ public class ExitCommand extends Command {
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("exit","Exit the application");
+        ConsoleUtils.printShifted("exit","Exit the application");
     }
 }

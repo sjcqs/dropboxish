@@ -9,6 +9,7 @@ import com.dropboxish.client.utils.LoginManager;
  * usage: register USERNAME
  */
 public class RegisterCommand extends AuthenticationCommand {
+    public final static String URL = "/user/register";
 
     public RegisterCommand(LoginManager manager){
         super(manager,"register");
@@ -16,11 +17,20 @@ public class RegisterCommand extends AuthenticationCommand {
 
     @Override
     public void run() throws IllegalArgumentException {
-
+        if (args.size() != 1){
+            ConsoleUtils.printError(
+                    "Wrong usage of register command",
+                    "usage: register USERNAME");
+            return;
+        }
+        String token = sendAuthenticationRequest(URL);
+        if (token != null){
+            ConsoleUtils.print("You are registered.","Use login command to log in.");
+        }
     }
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("register USERNAME","Register a new account to the application");
+        ConsoleUtils.printShifted("register USERNAME","Register a new account to the application");
     }
 }

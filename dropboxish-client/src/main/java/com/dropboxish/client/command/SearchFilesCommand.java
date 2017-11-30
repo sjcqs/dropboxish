@@ -19,6 +19,6 @@ public class SearchFilesCommand extends ClientCommand {
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("search PATTERN", "Search file whose name contains PATTERN");
+        ConsoleUtils.printShifted("search PATTERN", "Search file whose name contains PATTERN");
     }
 }

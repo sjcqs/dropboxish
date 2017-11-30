@@ -1,6 +1,6 @@
 package com.dropboxish.client.command;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -8,7 +8,7 @@ import java.util.List;
  * A simple command that can be executed
  */
 public abstract class Command {
-    protected List<String> args = null;
+    protected List<String> args = new LinkedList<>();
     /**
      * the name of this {@link Command}, write by the user to be run.
      */
@@ -30,7 +30,6 @@ public abstract class Command {
      * @param args
      */
     public void setArgs(List<String> args) {
-        this.args = new ArrayList<>();
         for (String arg : args) {
             arg = arg.replace("\\","");
             this.args.add(arg);
@@ -41,9 +40,7 @@ public abstract class Command {
      * Clear the arguments
      */
     public void clearArgs() {
-        if (args != null){
-            args = null;
-        }
+        args.clear();
     }
 
     /**

@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * The command parser
  * Allows to add and execute commands
  */
-public class CommandParser implements Closeable {
+public class CommandParser {
     private static final Pattern SPLIT_PATTERN = Pattern.compile("((?:[^\\\\ ]+\\\\\\s+)+[^\\\\ ]+|\\S+)");
     /**
      * A {@link Map} to store every possible {@link Command}
@@ -25,22 +25,17 @@ public class CommandParser implements Closeable {
      */
     private final BufferedReader reader;
 
-    private CommandParser(Reader in){
-        reader = new BufferedReader(in);
+    private CommandParser(BufferedReader in){
+        reader = in;
         commands = new HashMap<>();
     }
 
-    public CommandParser(Reader in, Command[] commands, HelpCommand helpCommand){
+    public CommandParser(BufferedReader in, Command[] commands, HelpCommand helpCommand){
         this(in);
         for (Command command : commands) {
             this.commands.put(command.getName(),command);
         }
         this.commands.put("help", helpCommand);
-    }
-
-    @Override
-    public void close() throws IOException {
-        reader.close();
     }
 
     public Command readCommand() throws IOException {

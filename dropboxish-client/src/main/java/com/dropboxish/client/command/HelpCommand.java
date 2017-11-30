@@ -24,7 +24,7 @@ public class HelpCommand extends Command {
 
     @Override
     public void help() {
-        ConsoleUtils.printLines("help", "Print this");
+        ConsoleUtils.printShifted("help", "Print this");
     }
 
 }
