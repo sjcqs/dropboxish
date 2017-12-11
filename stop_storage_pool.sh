@@ -1,4 +1,6 @@
 #! /bin/bash
+# source http://cgrant.io/tutorials/gcp/compute/gce/how-to-deploy-a-java-application-to-google-compute-engine/
+
 VM_NAME=dropboxish-pool
 
 #gcloud compute firewall-rules delete --quiet ${VM_NAME}-www
