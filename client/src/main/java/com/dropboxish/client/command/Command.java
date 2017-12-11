@@ -1,0 +1,74 @@
+package com.dropboxish.client.command;
+
+import com.dropboxish.client.User;
+
+import java.util.LinkedList;
+import java.util.List;
+
+/**
+ * Created by satyan on 11/22/17.
+ * Command executed when the user is authenticated
+ */
+public abstract class Command implements Runnable{
+    /**
+     * {@link User} used facultative
+     */
+    private User user;
+    /**
+     * the name of this {@link Command}, write by the user to be run.
+     */
+    private final String name;
+
+    public Command(String name) {
+        this.name = name.trim();
+    }
+
+    protected Command(String name, User user) {
+        this(name);
+        this.user = user;
+    }
+
+    protected User getUser() {
+        return user;
+    }
+
+    protected List<String> args = new LinkedList<>();
+
+
+    /**
+     * Return the {@link Command#name} of this command
+     * @return name
+     */
+    public String getName() {
+        return name;
+    }
+    /**
+     * Set the arguments
+     * @param args
+     */
+    public void setArgs(List<String> args) {
+        for (String arg : args) {
+            arg = arg.replace("\\","");
+            this.args.add(arg);
+        }
+    }
+
+    /**
+     * Clear the arguments
+     */
+    public void clearArgs() {
+        args.clear();
+    }
+
+    /**
+     * Run the {@link Command}
+     * @throws CommandIllegalArgumentException if the arguments are invalid
+     */
+    @Override
+    public abstract void run() throws CommandIllegalArgumentException;
+
+    /**
+     * Print the help for this {@link Command}
+     */
+    public abstract void help();
+}
