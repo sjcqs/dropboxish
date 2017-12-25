@@ -2,7 +2,7 @@ package com.dropboxish.services;
 
 import com.dropboxish.db.DropboxishDatabase;
 import com.dropboxish.model.FileInfo;
-import com.dropboxish.model.utils.FileUtils;
+import com.dropboxish.model.utils.FileUtil;
 import com.dropboxish.services.filters.Secured;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -46,7 +46,7 @@ public class FilesService {
             if (query != null && !query.isEmpty()) {
                 files.removeIf(file -> !file.getFilename().matches(query));
             }
-            return Response.ok(FileUtils.serialize(files)).build();
+            return Response.ok(FileUtil.serialize(files)).build();
         } catch (SQLException e) {
             logger.warning(e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -75,7 +75,7 @@ public class FilesService {
                 throw new IOException("File isn't complete");
             }
 
-            if (FileUtils.check(path, checksum)){
+            if (FileUtil.check(path, checksum)){
                 // TODO send file to controller and read result
                 db.putFile(filename, checksum, size, owner);
                 return Response.ok(String.format("%s file was successfully uploaded.", filename))

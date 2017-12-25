@@ -3,7 +3,7 @@ package com.dropboxish.client.command;
 import com.dropboxish.client.User;
 import com.dropboxish.client.utils.ConsoleUtils;
 import com.dropboxish.client.utils.RequestManager;
-import com.dropboxish.model.utils.FileUtils;
+import com.dropboxish.model.utils.FileUtil;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
@@ -55,7 +55,7 @@ public class UploadFileCommand extends RestCommand {
                     .size(Files.size(file))
                     .build()
             );
-            String checksum = FileUtils.checksum(file);
+            String checksum = FileUtil.checksum(file);
             MultiPart multiPart = new FormDataMultiPart()
                     .field("checksum", checksum)
                     .bodyPart(bodyPart);

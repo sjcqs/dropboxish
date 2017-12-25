@@ -1,13 +1,11 @@
 package com.dropboxish.model.utils;
 
 import com.dropboxish.model.FileInfo;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -17,9 +15,7 @@ import java.util.List;
  * Created by satyan on 12/5/17.
  * A file
  */
-public class FileUtils {
-    private final static Gson GSON = new Gson();
-    private final static Type LIST_FILE_INFO_TYPE = new TypeToken<List<FileInfo>>(){}.getType();
+public class FileUtil {
     private static final String METHOD = "SHA-256";
     private final static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
 
@@ -48,17 +44,32 @@ public class FileUtils {
         return null;
     }
 
+    private static String checksum(ByteBuffer buffer) {
+        try {
+            MessageDigest fileDigest = MessageDigest.getInstance(METHOD);
+            fileDigest.update(buffer);
+            return bytesToHex(fileDigest.digest());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static boolean check(Path file, String checksum) {
         String sum = checksum(file);
+        return sum != null && sum.equals(checksum);
+    }
 
+    public static boolean check(ByteBuffer buffer, String checksum) {
+        String sum = checksum(buffer);
         return sum != null && sum.equals(checksum);
     }
 
     public static String serialize(List<FileInfo> files) {
-        return GSON.toJson(files);
+        return GsonUtil.GSON.toJson(files);
     }
 
     public static List<FileInfo> deserializeList(String json){
-        return GSON.fromJson(json, LIST_FILE_INFO_TYPE);
+        return GsonUtil.GSON.fromJson(json, GsonUtil.LIST_FILE_INFO_TYPE);
     }
 }
