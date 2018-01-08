@@ -11,7 +11,6 @@ import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -23,27 +22,22 @@ public class Controller extends ReceiverAdapter {
     private JChannel channel;
     private final List<String> state = new ArrayList<>(1000);
 
-    private String user_name = System.getProperty("user.name", "n/a") + new Date().getTime() % 1000;
-    private boolean stopped = false;
-
     public void start() throws Exception{
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        InputStream stream = loader.getResourceAsStream("sequencer.xml");
+        InputStream stream = loader.getResourceAsStream("jgroups-config.xml");
         channel = new JChannel(stream).setReceiver(this);
         channel.connect("ChatCluster");
         channel.getState(null, 10000);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             // Use stderr here since the logger may has been reset by its JVM shutdown hook.
-            System.err.println("Shutting down gRPC server");
+            System.err.println("Shutting down jgroups server");
             Controller.this.stop();
-            System.err.println("Server shut down");
+            System.err.println("Server shut down.");
         }));
-        eventLoop();
     }
 
     private void stop() {
         channel.close();
-        stopped = true;
     }
 
     @Override
@@ -84,19 +78,8 @@ public class Controller extends ReceiverAdapter {
         list.forEach(System.out::println);
     }
 
-    private void eventLoop() {
-        while (!stopped) {
-            try {
-                String line = "Hello world !";
-                line = "[" + user_name + "]: " + line;
-                Message msg = new Message(null, line);
-                channel.send(msg);
-                Thread.sleep(2000L);
-            }catch (InterruptedException e){
-                Thread.currentThread().interrupt();
-            }catch (Exception ignored){
-            }
-        }
+    public void sendMessage(Message msg) throws Exception {
+        channel.send(msg);
     }
 
 }

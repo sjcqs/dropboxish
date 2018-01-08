@@ -11,8 +11,10 @@
          thread_pool.max_threads="20"
          thread_pool.keep_alive_time="30000"/>
 
-    <TCPPING async_discovery="true"
+    <TCPPING
+            async_discovery="true"
              port_range="1"/>
+
     <MERGE3/>
     <FD_SOCK/>
     <FD_ALL/>

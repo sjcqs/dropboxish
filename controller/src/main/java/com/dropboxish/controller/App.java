@@ -10,23 +10,27 @@ import java.util.logging.Logger;
  * Controller app
  */
 public class App {
-    private static final int PORT = 8091;
+    private static final int PORT = 8090;
     private static final Logger logger = Logger.getLogger("Controller");
 
     public static void main(String[] args) {
-        /* // JGROUP STUFF
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        InputStream stream = loader.getResourceAsStream("sequencer.xml");
-        channel = new JChannel(stream).setReceiver(this);*/
-        ControllerServer server = new ControllerServer(PORT);
+        int port = PORT;
+        if (args.length > 0){
+            port = Integer.parseInt(args[0]);
+        }
+        Controller controller = new Controller();
+        ControllerServer server = new ControllerServer(port);
         try {
             server.start();
+            controller.start();
             server.blockUntilShutdown();
         } catch (IOException e) {
             logger.severe(e.getMessage());
             System.exit(-1);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

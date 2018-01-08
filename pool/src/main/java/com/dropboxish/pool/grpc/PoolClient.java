@@ -1,8 +1,17 @@
 package com.dropboxish.pool.grpc;
 
+import com.dropboxish.model.utils.FileUtil;
+import com.dropboxish.pool.proto.Block;
+import com.dropboxish.pool.proto.OperationStatus;
 import com.dropboxish.pool.proto.PoolGrpc;
+import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Created by satyan on 12/12/17.
@@ -50,5 +59,25 @@ public class PoolClient {
 
     public PoolGrpc.PoolStub getAsyncStub() {
         return asyncStub;
+    }
+
+    public static void main(String[] args) {
+        PoolClient client = new PoolClient("localhost",8060);
+        try {
+            Block.Builder builder = Block.newBuilder();
+            Path path = Paths.get("README.md");
+            String checksum = FileUtil.checksum(Paths.get("README.md"));
+            System.out.println("Checksum:" + checksum);
+            ByteString bytes = ByteString.readFrom(Files.newInputStream(path));
+            OperationStatus status = client.blockingStub.putBlock(builder
+                    .setLength(Files.size(path))
+                    .setChecksum(checksum)
+                    .setData(bytes)
+                    .build());
+            System.out.println(status.getStatus());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }
