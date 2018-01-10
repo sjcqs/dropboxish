@@ -23,6 +23,7 @@ public class DownloadFileCommand extends RestCommand {
         }
         ConsoleUtils.printTitle("DOWNLOAD");
         ConsoleUtils.printShifted("Downloading file", args.get(0));
+        throw new IllegalArgumentException("not implemented");
     }
 
     @Override

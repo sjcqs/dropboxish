@@ -13,7 +13,11 @@ public class App {
     private final static Logger logger = Logger.getLogger("Pool");
     private final static int PORT = 8060;
     public static void main(String[] args) {
-        PoolServer server = new PoolServer(PORT);
+        int port = PORT;
+        if (args.length > 0){
+            port = Integer.parseInt(args[0]);
+        }
+        PoolServer server = new PoolServer(port);
         try {
             server.start();
             server.blockUntilShutdown();

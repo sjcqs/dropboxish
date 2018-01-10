@@ -1,56 +1,39 @@
 package com.dropboxish.pool.grpc;
 
-import com.dropboxish.model.utils.FileUtil;
+import com.dropboxish.model.Host;
 import com.dropboxish.pool.proto.Block;
+import com.dropboxish.pool.proto.Metadata;
 import com.dropboxish.pool.proto.OperationStatus;
 import com.dropboxish.pool.proto.PoolGrpc;
-import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 
 /**
  * Created by satyan on 12/12/17.
  * Client for the pool GRPC service
  */
 public class PoolClient {
-    public static PoolClient instance = null;
-
-    private final ManagedChannel channel;
+    private static final Logger logger = Logger.getLogger("Pool");
     private final PoolGrpc.PoolBlockingStub blockingStub;
     private final PoolGrpc.PoolStub asyncStub;
+    private final Host host;
 
-    /**
-     * Initialize the {@link PoolClient} instance
-     * @param host host of GRPC server
-     * @param port port of GRPC server
-     * @return initialized {@literal instance}
-     */
-    public static PoolClient init(String host, int port){
-        instance = new PoolClient(host, port);
-        return instance;
+    public PoolClient(String host, int port){
+        this(new Host(host, port));
     }
 
-    /**
-     * Get a instance of {@link PoolClient}, or {@code null} if {@link PoolClient} wasn't init using {@literal init}
-     * @return {@literal instance} or {@code null} if not initialized
-     */
-    public static PoolClient getInstance(){
-        return instance;
-    }
-
-    private PoolClient(String host, int port){
-        this(ManagedChannelBuilder.forAddress(host,port).usePlaintext(true));
-    }
-
-    private PoolClient(ManagedChannelBuilder<?> builder) {
-        channel = builder.build();
+    public PoolClient(Host host){
+        ManagedChannelBuilder<?> builder =
+                ManagedChannelBuilder.forAddress(host.getHost(),host.getPort()).usePlaintext(true);
+        ManagedChannel channel = builder.build();
         blockingStub = PoolGrpc.newBlockingStub(channel);
         asyncStub = PoolGrpc.newStub(channel);
+        this.host = host;
     }
 
     public PoolGrpc.PoolBlockingStub getBlockingStub() {
@@ -61,23 +44,50 @@ public class PoolClient {
         return asyncStub;
     }
 
-    public static void main(String[] args) {
-        PoolClient client = new PoolClient("localhost",8060);
-        try {
-            Block.Builder builder = Block.newBuilder();
-            Path path = Paths.get("README.md");
-            String checksum = FileUtil.checksum(Paths.get("README.md"));
-            System.out.println("Checksum:" + checksum);
-            ByteString bytes = ByteString.readFrom(Files.newInputStream(path));
-            OperationStatus status = client.blockingStub.putBlock(builder
-                    .setLength(Files.size(path))
-                    .setChecksum(checksum)
-                    .setData(bytes)
-                    .build());
-            System.out.println(status.getStatus());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
+    public Host getHost() {
+        return host;
+    }
+
+    public boolean putBlock(ByteBuffer buffer, Metadata metadata) {
+        final OperationStatus.Builder builder = OperationStatus.newBuilder();
+        builder.setStatus(OperationStatus.Status.UNKNOWN);
+
+        StreamObserver<Block> requestObserver = asyncStub.putBlock(
+                new StreamObserver<OperationStatus>() {
+                    @Override
+                    public void onNext(OperationStatus value) {
+                    }
+
+                    @Override
+                    public void onError(Throwable t) {
+                        logger.warning(t.getMessage());
+                        builder.setStatus(OperationStatus.Status.FAILED)
+                                .setReason(t.getMessage());
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        logger.info("Block sent");
+                        builder.setStatus(OperationStatus.Status.OK);
+                    }
+                });
+        try {
+            requestObserver.onNext(Block.newBuilder()
+                    .setMetadata(metadata)
+                    .build());
+            PoolService.sendBlock(buffer, requestObserver);
+            // wait for the response
+            while(builder.getStatus().equals(OperationStatus.Status.UNKNOWN)){
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+        return !builder.getStatus().equals(OperationStatus.Status.FAILED);
     }
 }

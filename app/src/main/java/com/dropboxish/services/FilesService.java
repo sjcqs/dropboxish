@@ -1,5 +1,8 @@
 package com.dropboxish.services;
 
+import com.dropboxish.app.App;
+import com.dropboxish.controller.grpc.ControllerClient;
+import com.dropboxish.controller.proto.Metadata;
 import com.dropboxish.db.DropboxishDatabase;
 import com.dropboxish.model.FileInfo;
 import com.dropboxish.model.utils.FileUtil;
@@ -39,6 +42,7 @@ public class FilesService {
     @Path("list")
     @Produces(MediaType.APPLICATION_JSON)
     public Response listFiles(@QueryParam("query") final String query) {
+
         String owner = securityContext.getUserPrincipal().getName();
         try {
             DropboxishDatabase db = DropboxishDatabase.getInstance();
@@ -76,25 +80,38 @@ public class FilesService {
             }
 
             if (FileUtil.check(path, checksum)){
-                // TODO send file to controller and read result
-                db.putFile(filename, checksum, size, owner);
-                return Response.ok(String.format("%s file was successfully uploaded.", filename))
-                        .build();
+                logger.info(FileUtil.checksum(path));
+                ControllerClient client = App.leader;
+                if (client != null) {
+                    if (client.putFile(path, Metadata.newBuilder()
+                            .setChecksum(checksum)
+                            .setFilename(filename)
+                            .setLength(size)
+                            .build())) {
+                        logger.info("OK");
+                        db.putFile(filename, checksum, size, owner);
+                        return Response.ok(String.format("%s file was successfully uploaded.", filename))
+                                .build();
+                    } else {
+                        logger.warning("Error");
+                    }
+                }
             } else {
                 throw new IOException("Invalid checksum for the file.");
             }
         } catch (IOException | SQLException e) {
             logger.warning(e.getMessage());
             e.printStackTrace();
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("The files wasn't uploaded.")
-                    .build();
         }
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("The files wasn't uploaded.")
+                .build();
     }
 
     @GET
     @Path("download")
     public Response downloadFile(@QueryParam("filename") String filename){
+        // TODO get the file from the controller and send it
         return Response.status(Response.Status.NOT_IMPLEMENTED).entity("Download file : not implemented").build();
     }
 

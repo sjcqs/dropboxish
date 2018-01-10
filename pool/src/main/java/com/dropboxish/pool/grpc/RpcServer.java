@@ -12,6 +12,7 @@ import java.util.logging.Logger;
  * GRPC Server to receive pool related requests
  */
 public abstract class RpcServer {
+    public static final int GRPC_MAX_SIZE = 4_000_000;
     private final static Logger logger = Logger.getLogger("Pool");
     private final int port;
     private final Server server;

@@ -8,8 +8,8 @@ option objc_class_prefix = "PLP";
 package pool;
 
 service Pool {
-    rpc GetBlock(BlockRequest) returns(Block) {};
-    rpc PutBlock(Block) returns(OperationStatus) {};
+    rpc GetBlock(BlockRequest) returns(stream Block) {};
+    rpc PutBlock(stream Block) returns(OperationStatus) {};
     rpc DeleteBlock(BlockRequest) returns(OperationStatus) {}
 }
 
@@ -18,9 +18,20 @@ message BlockRequest {
 }
 
 message Block{
-    string checksum = 1;
-    int64 length = 2;
-    bytes data = 3;
+    oneof file_oneof{
+        Metadata metadata = 1;
+        Data data = 2;
+    }
+}
+
+message Metadata {
+    int64 length = 1;
+    string checksum = 2;
+}
+
+message Data {
+    bytes data = 1;
+    int32 length = 2;
 }
 
 message OperationStatus{
@@ -28,6 +39,7 @@ message OperationStatus{
     enum Status {
         OK = 0;
         FAILED = 1;
+        UNKNOWN = 2;
     }
     Status status = 2;
 }

@@ -5,11 +5,16 @@ import com.dropboxish.model.FileInfo;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Created by satyan on 12/5/17.
@@ -17,7 +22,9 @@ import java.util.List;
  */
 public class FileUtil {
     private static final String METHOD = "SHA-256";
+    private static final Logger logger = Logger.getLogger("FileUtil");
     private final static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    private static final int CHUNK_SIZE = 5_000_000;
 
     private static String bytesToHex(byte[] bytes) {
         char[] hexChars = new char[bytes.length * 2];
@@ -44,7 +51,7 @@ public class FileUtil {
         return null;
     }
 
-    private static String checksum(ByteBuffer buffer) {
+    public static String checksum(ByteBuffer buffer) {
         try {
             MessageDigest fileDigest = MessageDigest.getInstance(METHOD);
             fileDigest.update(buffer);
@@ -71,5 +78,27 @@ public class FileUtil {
 
     public static List<FileInfo> deserializeList(String json){
         return GsonUtil.GSON.fromJson(json, GsonUtil.LIST_FILE_INFO_TYPE);
+    }
+
+    public static Path[] chunks(Path file) throws IOException {
+        int count =  (int) Math.ceil((double)Files.size(file) / (double)CHUNK_SIZE);
+        String filename = file.toString();
+        Path chunks[] = new Path[count];
+        int i = 0;
+
+        try(InputStream in = Files.newInputStream(file, StandardOpenOption.DELETE_ON_CLOSE)){
+            int read;
+            byte buff[] = new byte[CHUNK_SIZE];
+            while ((read = in.read(buff)) > 0) {
+                logger.info("Create: " + filename + String.format(".part%03d",i));
+                Path chunk = Paths.get(filename + String.format(".part%03d",i));
+                try(OutputStream stream = Files.newOutputStream(chunk, StandardOpenOption.CREATE)){
+                    stream.write(buff, 0, read);
+                }
+                chunks[i] = chunk;
+                i++;
+            }
+        }
+        return chunks;
     }
 }

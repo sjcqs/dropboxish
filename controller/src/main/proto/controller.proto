@@ -11,7 +11,9 @@ service Controller {
     rpc PutFile(stream File) returns(OperationStatus) {}
     rpc GetFile(Metadata) returns(stream File) {}
     rpc DeleteFile(Metadata) returns(OperationStatus) {}
+    rpc GetLeader(Subscription) returns(stream Leader) {}
 }
+
 
 message Metadata {
     string filename = 1;
@@ -34,8 +36,15 @@ message File {
 message OperationStatus{
     string reason = 1;
     enum Status {
-        OK = 0;
-        FAILED = 1;
+        UNKNOWN = 0;
+        OK = 1;
+        FAILED = 2;
     }
     Status status = 2;
+}
+
+message Subscription{
+}
+
+message Leader{
 }

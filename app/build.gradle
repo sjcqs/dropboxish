@@ -1,5 +1,6 @@
 dependencies{
     compile project(':model')
+    compile project(':controller')
     compile 'org.xerial:sqlite-jdbc:3.8.11.2'
 
     compile 'javax.ws.rs:javax.ws.rs-api:2.0'
