@@ -2,11 +2,13 @@ package com.dropboxish.client;
 
 import com.dropboxish.client.command.*;
 import com.dropboxish.client.utils.ConsoleUtils;
-import com.dropboxish.client.utils.Stoppable;
 import com.dropboxish.client.utils.RequestManager;
+import com.dropboxish.client.utils.Stoppable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
@@ -15,10 +17,12 @@ import java.util.logging.Logger;
  */
 public class User implements Runnable, Stoppable {
     private static final Logger logger = Logger.getLogger("client");
+    private static final int THREAD_COUNT = 5;
     private static User instance = null;
 
     private final CommandParser parser;
     private final BufferedReader reader;
+    private final ExecutorService service;
     private boolean stopped = false;
     private String serverUrl;
     private int serverPort;
@@ -33,6 +37,7 @@ public class User implements Runnable, Stoppable {
     }
 
     private User(BufferedReader reader, String url, int port){
+        this.service = Executors.newFixedThreadPool(THREAD_COUNT);
         this.reader = reader;
         this.serverUrl = url;
         this.serverPort = port;
@@ -77,10 +82,15 @@ public class User implements Runnable, Stoppable {
         ConsoleUtils.printAppInfo();
         while (!stopped && requestManager.isConnected()) {
             try {
-                ConsoleUtils.printPrompt(">");
+                ConsoleUtils.printPrompt();
                 command = parser.readCommand();
                 if (command != null) {
-                    command.run();
+                    if (!command.isThread()){
+                        command.run();
+                    } else {
+                        command.check();
+                        service.submit(command);
+                    }
                 } else {
                     logger.info("Quit");
                     User.this.stop();

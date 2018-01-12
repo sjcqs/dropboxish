@@ -49,7 +49,7 @@ public class App {
             System.exit(-1);
         }
 
-        Controller controller = new Controller();
+        Controller controller = new Controller(port);
         ControllerServer server = new ControllerServer(controller, port, pools);
         try {
             server.start();

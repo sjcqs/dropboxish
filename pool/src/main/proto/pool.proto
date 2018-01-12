@@ -18,7 +18,7 @@ message BlockRequest {
 }
 
 message Block{
-    oneof file_oneof{
+    oneof block_oneof{
         Metadata metadata = 1;
         Data data = 2;
     }

@@ -29,22 +29,27 @@ public class PoolService extends PoolGrpc.PoolImplBase {
     @Override
     public void getBlock(BlockRequest request, StreamObserver<Block> responseObserver) {
         final String checksum = request.getChecksum();
+        logger.info("Getting: " + checksum);
         final Path path = getPath(checksum);
 
         if (Files.exists(path) && FileUtil.check(path, checksum)){
             try {
                 sendBlock(path, responseObserver);
             } catch (IOException e) {
+                logger.warning("Error sending the block");
+                e.printStackTrace();
                 responseObserver.onError(e);
             }
         } else {
+            logger.warning("Error sending the block");
             responseObserver.onError(new NoSuchFileException("Block doesn't exists or is corrupted."));
         }
     }
 
     public static void sendBlock(Path path, StreamObserver<Block> responseObserver) throws IOException {
+        logger.info("Sending block");
         byte[] bytes = new byte[RpcServer.GRPC_MAX_SIZE];
-        try (InputStream in = Files.newInputStream(path, StandardOpenOption.DELETE_ON_CLOSE)) {
+        try (InputStream in = Files.newInputStream(path)) {
             int read;
             while ((read = in.read(bytes, 0, RpcServer.GRPC_MAX_SIZE)) != -1) {
                 ByteBuffer buffer = ByteBuffer.wrap(bytes);
@@ -58,6 +63,7 @@ public class PoolService extends PoolGrpc.PoolImplBase {
                 responseObserver.onNext(file);
             }
             responseObserver.onCompleted();
+            logger.info("Block sent.");
         }
     }
 
@@ -84,7 +90,7 @@ public class PoolService extends PoolGrpc.PoolImplBase {
             @Override
             public void onNext(Block block) {
                 Metadata metadata;
-                switch (block.getFileOneofCase()){
+                switch (block.getBlockOneofCase()){
                     case METADATA:
                         metadata = block.getMetadata();
                         try {
@@ -105,7 +111,7 @@ public class PoolService extends PoolGrpc.PoolImplBase {
                             responseObserver.onError(e);
                         }
                         break;
-                    case FILEONEOF_NOT_SET:
+                    case BLOCKONEOF_NOT_SET:
                         break;
                 }
             }
@@ -145,6 +151,7 @@ public class PoolService extends PoolGrpc.PoolImplBase {
                 responseObserver.onNext(OperationStatus.newBuilder()
                         .setStatus(OperationStatus.Status.OK)
                         .build());
+                logger.info("Block deleted:" + checksum);
             } catch (IOException e) {
                 responseObserver.onNext(OperationStatus.newBuilder()
                         .setStatus(OperationStatus.Status.FAILED)

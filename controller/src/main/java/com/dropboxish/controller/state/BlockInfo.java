@@ -10,12 +10,14 @@ public class BlockInfo implements Serializable{
     private final Type type;
     private final int index;
     private final int length;
+    private final int realLength;
 
-    public BlockInfo(String checksum, Type type, int index, int length) {
+    public BlockInfo(String checksum, Type type, int index, int length, int realLength) {
         this.checksum = checksum;
         this.type = type;
         this.index = index;
         this.length = length;
+        this.realLength = realLength;
     }
 
     public Type getType() {
@@ -37,6 +39,10 @@ public class BlockInfo implements Serializable{
     @Override
     public String toString() {
         return String.format("%d. type: %s, checksum: %s, length: %d", index, type.name(), checksum, length);
+    }
+
+    public int getRealLength() {
+        return realLength;
     }
 
     public enum Type{

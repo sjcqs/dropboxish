@@ -1,16 +1,15 @@
 package com.dropboxish.pool.grpc;
 
 import com.dropboxish.model.Host;
-import com.dropboxish.pool.proto.Block;
-import com.dropboxish.pool.proto.Metadata;
-import com.dropboxish.pool.proto.OperationStatus;
-import com.dropboxish.pool.proto.PoolGrpc;
+import com.dropboxish.pool.proto.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -22,6 +21,7 @@ public class PoolClient {
     private final PoolGrpc.PoolBlockingStub blockingStub;
     private final PoolGrpc.PoolStub asyncStub;
     private final Host host;
+    private final ManagedChannel channel;
 
     public PoolClient(String host, int port){
         this(new Host(host, port));
@@ -30,18 +30,10 @@ public class PoolClient {
     public PoolClient(Host host){
         ManagedChannelBuilder<?> builder =
                 ManagedChannelBuilder.forAddress(host.getHost(),host.getPort()).usePlaintext(true);
-        ManagedChannel channel = builder.build();
+        channel = builder.build();
         blockingStub = PoolGrpc.newBlockingStub(channel);
         asyncStub = PoolGrpc.newStub(channel);
         this.host = host;
-    }
-
-    public PoolGrpc.PoolBlockingStub getBlockingStub() {
-        return blockingStub;
-    }
-
-    public PoolGrpc.PoolStub getAsyncStub() {
-        return asyncStub;
     }
 
 
@@ -89,5 +81,50 @@ public class PoolClient {
             return false;
         }
         return !builder.getStatus().equals(OperationStatus.Status.FAILED);
+    }
+
+    public Runnable getBlock(ByteBuffer buffer, String checksum) {
+        return new Downloader(buffer, checksum);
+    }
+
+    public boolean deleteBlock(String checksum) {
+        BlockRequest request = BlockRequest.newBuilder().setChecksum(checksum).build();
+        return blockingStub.deleteBlock(request).getStatus().equals(OperationStatus.Status.OK);
+    }
+
+    @Override
+    public String toString() {
+        return host.toString();
+    }
+
+    private class Downloader implements Runnable{
+        private  final ByteBuffer buffer;
+        private final BlockRequest request;
+
+        private Downloader(ByteBuffer buffer, String checksum) {
+            this.buffer = buffer;
+            this.request = BlockRequest.newBuilder()
+                    .setChecksum(checksum)
+                    .build();
+        }
+
+        @Override
+        public void run() {
+            try {
+                Iterator<Block> it = blockingStub
+                        .withDeadlineAfter(5, TimeUnit.SECONDS)
+                        .withWaitForReady().getBlock(request);
+
+                while (it.hasNext()) {
+                    Block block = it.next();
+                    Data data = block.getData();
+                    buffer.put(data.getData().toByteArray(), 0, data.getLength());
+                }
+            } catch (Exception e){
+                logger.warning(e.getMessage());
+                e.printStackTrace();
+            }
+        }
+
     }
 }

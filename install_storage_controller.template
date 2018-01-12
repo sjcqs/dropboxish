@@ -7,7 +7,7 @@ sudo su -
 
 
 # install OpenJDK
-apt-get update
+apt-get filesMap
 
 apt-get install openjdk-8-jdk -y
 

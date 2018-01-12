@@ -334,4 +334,36 @@ public class DropboxishDatabase {
 
         return results;
     }
+
+    public FileInfo getFile(String filename, String owner) throws SQLException{
+        Connection c = null;
+        PreparedStatement st = null;
+        try {
+            FileInfo result = null;
+            c = connect();
+            st = c.prepareStatement(
+                    "SELECT * FROM file WHERE owner = ? AND filename = ?"
+            );
+            st.setString(1, owner);
+            st.setString(2, filename);
+
+            ResultSet set = st.executeQuery();
+            if (set.next()) {
+                result = new FileInfo(
+                        set.getString("filename"),
+                        set.getString("checksum"),
+                        set.getLong("size"),
+                        set.getString("owner")
+                );
+            }
+            return result;
+        }finally {
+            if (st != null){
+                st.close();
+            }
+            if (c != null){
+                c.close();
+            }
+        }
+    }
 }

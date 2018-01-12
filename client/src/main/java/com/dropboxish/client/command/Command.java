@@ -19,13 +19,25 @@ public abstract class Command implements Runnable{
      */
     private final String name;
 
+    private final boolean thread;
+
     public Command(String name) {
-        this.name = name.trim();
+        this(name, false);
     }
 
     protected Command(String name, User user) {
-        this(name);
+        this(name, user, false);
+    }
+
+    public Command(String name, boolean thread) {
+        this.name = name.trim();
+        this.thread = thread;
+    }
+
+    protected Command(String name, User user, boolean thread) {
+        this(name, thread);
         this.user = user;
+
     }
 
     protected User getUser() {
@@ -34,6 +46,9 @@ public abstract class Command implements Runnable{
 
     protected List<String> args = new LinkedList<>();
 
+    public boolean isThread() {
+        return thread;
+    }
 
     /**
      * Return the {@link Command#name} of this command
@@ -71,4 +86,6 @@ public abstract class Command implements Runnable{
      * Print the help for this {@link Command}
      */
     public abstract void help();
+
+    public void check() {}
 }

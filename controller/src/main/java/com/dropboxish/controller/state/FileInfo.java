@@ -9,16 +9,18 @@ import java.util.List;
  *
  */
 public class FileInfo implements Serializable{
+    private final String owner;
+    private final String filename;
     private final String checksum;
-    private final long length;
-    private final String name;
 
+    private final long length;
     private final List<ChunkInfo> chunks = new ArrayList<>();
 
-    public FileInfo(String name, String checksum, long length) {
+    public FileInfo(String owner, String filename, String checksum, long length) {
+        this.owner = owner;
         this.checksum = checksum;
         this.length = length;
-        this.name = name;
+        this.filename = filename;
     }
 
     public void addChunk(ChunkInfo chunk){
@@ -33,8 +35,12 @@ public class FileInfo implements Serializable{
         return length;
     }
 
-    public String getName() {
-        return name;
+    public String getFilename() {
+        return filename;
+    }
+
+    public String getOwner() {
+        return owner;
     }
 
     public List<ChunkInfo> getChunks() {
@@ -47,6 +53,6 @@ public class FileInfo implements Serializable{
         for (ChunkInfo chunk : chunks) {
             str += "\t" + chunk + "\n";
         }
-        return String.format("%s. checksum: %s, length: %d\n%s", name, checksum, length, str);
+        return String.format("%s/%s. checksum: %s, length: %d\n%s", owner, filename, checksum, length, str);
     }
 }

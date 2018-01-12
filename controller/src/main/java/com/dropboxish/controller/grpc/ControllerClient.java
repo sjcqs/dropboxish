@@ -1,17 +1,18 @@
 package com.dropboxish.controller.grpc;
 
-import com.dropboxish.controller.proto.ControllerGrpc;
-import com.dropboxish.controller.proto.File;
-import com.dropboxish.controller.proto.Metadata;
-import com.dropboxish.controller.proto.OperationStatus;
+import com.dropboxish.controller.proto.*;
+import com.dropboxish.model.FileInfo;
 import com.dropboxish.model.Host;
-import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
@@ -47,10 +48,6 @@ public class ControllerClient {
         return asyncStub;
     }
 
-    public ConnectivityState getState(){
-        return  channel.getState(false);
-    }
-
     public boolean putFile(Path path, Metadata metadata){
         final OperationStatus.Builder builder = OperationStatus.newBuilder();
         builder.setStatus(OperationStatus.Status.UNKNOWN);
@@ -79,13 +76,10 @@ public class ControllerClient {
             // wait for the response
             while(builder.getStatus().equals(OperationStatus.Status.UNKNOWN)){
                 try {
-                    logger.info("WAIT");
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    logger.info("INTERRUPTION");
                     Thread.interrupted();
                 }
-                logger.info(builder.getStatus().name());
             }
         } catch (IOException e) {
             return false;
@@ -95,8 +89,42 @@ public class ControllerClient {
 
     }
 
+    public boolean getFile(FileInfo info, Path path){
+        Metadata metadata = Metadata.newBuilder()
+                .setChecksum(info.getChecksum())
+                .setLength(info.getSize())
+                .setOwner(info.getOwner())
+                .setFilename(info.getFilename())
+                .build();
+        try {
+            Iterator<File> it = blockingStub.getFile(metadata);
+            try (OutputStream out = Files.newOutputStream(path, StandardOpenOption.CREATE)) {
+                while (it.hasNext()) {
+                    File file = it.next();
+                    Data data = file.getData();
+                    out.write(data.getData().toByteArray(), 0, data.getLength());
+                }
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
+            return false;
+        }
+    }
+
     @Override
     public String toString() {
         return String.format("%s", host);
+    }
+
+    public boolean deleteFile(FileInfo file) throws Exception{
+        Metadata metadata = Metadata.newBuilder()
+                .setFilename(file.getFilename())
+                .setChecksum(file.getChecksum())
+                .setLength(file.getSize())
+                .build();
+        return blockingStub.deleteFile(metadata).getStatus().equals(OperationStatus.Status.OK);
     }
 }

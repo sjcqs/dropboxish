@@ -2,13 +2,15 @@ package com.dropboxish.controller.fec;
 
 import com.dropboxish.controller.state.Block;
 import com.dropboxish.controller.state.BlockInfo;
+import com.dropboxish.model.utils.FileUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -36,11 +38,35 @@ public class FECUtil {
         }
     }
 
-    public static void recover(Block[] blocks, int count, Block missing[]){
-        recover(blocks, count, missing, false);
+    private static void recover(Block[] blocks, Block missing[]){
+        recover(blocks, missing, false);
     }
 
-    public static void recover(Block[] blocks, int count, Block missing[], boolean dataOnly){
+    public static boolean recover(Block[] blocks) {
+        List<Block> errors = new ArrayList<>();
+
+        for (Block block : blocks) {
+            if (!FileUtil.check(block.getBuffer(), block.getChecksum())) {
+                logger.warning("Missing: " + block.getInfo());
+                errors.add(block);
+            }
+        }
+        if (!errors.isEmpty()){
+            recover(blocks, errors.toArray(new Block[0]));
+            for (Block error : errors) {
+                Block block = blocks[error.getIndex()];
+                if (block.getType().equals(BlockInfo.Type.DATA)){
+                    if (!FileUtil.check(block.getBuffer(), block.getChecksum())) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private static void recover(Block[] blocks, Block missing[], boolean dataOnly){
+        int count = blocks.length;
         int m = count < 4 ? count - 1 : count - 2;
         if (missing.length <= 2){
             if (missing.length == 1){
@@ -68,13 +94,13 @@ public class FECUtil {
                     recoverDataBlocks(blocks, m0.getIndex(), m1.getIndex(), m);
                 }
                 // missing parity && data
-                else if (m0.getType().equals(BlockInfo.Type.DATA) && m1.getType().equals(BlockInfo.Type.RS)){
-                    recoverDataBlockNoParity(blocks, m0.getIndex(), m);
+                else if (m0.getType().equals(BlockInfo.Type.DATA) && m1.getType().equals(BlockInfo.Type.PARITY)){
+                    recoverDataBlockNoParity(blocks, m0.getIndex(), m + 1);
                     if (!dataOnly){
                         parityBlock(blocks, m1.getIndex(), m);
                     }
-                } else if (m0.getType().equals(BlockInfo.Type.RS) && m1.getType().equals(BlockInfo.Type.DATA)){
-                    recoverDataBlockNoParity(blocks, m1.getIndex(), m);
+                } else if (m0.getType().equals(BlockInfo.Type.PARITY) && m1.getType().equals(BlockInfo.Type.DATA)){
+                    recoverDataBlockNoParity(blocks, m1.getIndex(), m + 1);
                     if (!dataOnly) {
                         parityBlock(blocks, m0.getIndex(), m);
                     }
@@ -110,13 +136,15 @@ public class FECUtil {
         try(InputStream in = Files.newInputStream(chunk, StandardOpenOption.DELETE_ON_CLOSE)){
             int i = 0;
             byte bytes[] = new byte[size];
-            while (in.read(bytes) > 0){
-                blocks[i] = new Block(bytes, BlockInfo.Type.DATA, i);
+            int read;
+            while ((read = in.read(bytes)) > 0){
+                blocks[i] = new Block(bytes, BlockInfo.Type.DATA, i, read);
                 i++;
             }
         }
         return blocks;
     }
+
 
     private static Block[] parity(Path chunk, int chunkSize, int count) throws IOException {
 
@@ -128,7 +156,6 @@ public class FECUtil {
         return blocks;
     }
 
-
     private static Block[] reedSolomon(Path chunk, int chunkSize, int count) throws IOException {
         final int p = 2;
         final int m = count - p;
@@ -136,7 +163,7 @@ public class FECUtil {
         Block[] blocks = split(chunk, blockSize, count);
         computeParity(blocks, m, m);
         computeRsBlock(blocks, m + 1, m);
-        /*// Inline test, fuck unit tests ...
+        // Inline test, Fuck JUnit ...
         for (int i = 0; i < m; i++) {
             String checksum = blocks[i].getChecksum();
             recoverDataBlockNoParity(blocks, i, m + 1);
@@ -146,7 +173,7 @@ public class FECUtil {
                 recoverDataBlocks(blocks, i, j, m);
                 assert (checksum.equals(blocks[i].getChecksum()) && checksum1.equals(blocks[j].getChecksum()));
             }
-        }*/
+        }
         return blocks;
     }
 
@@ -165,7 +192,7 @@ public class FECUtil {
                 b0[i1] = GF.getInstance().sum(b0[i1],GF.getInstance().mul(b1[i1], g));
             }
         }
-        return new Block(b0, BlockInfo.Type.RS, index);
+        return new Block(b0, BlockInfo.Type.RS, index, b0.length);
     }
 
     private static void computeParity(final Block[] blocks, int index, int m){
@@ -183,7 +210,7 @@ public class FECUtil {
                 b0[i1] = GF.getInstance().sum(b0[i1], b1[i1]);
             }
         }
-        return new Block(b0, BlockInfo.Type.PARITY, index);
+        return new Block(b0, BlockInfo.Type.PARITY, index, b0.length);
     }
 
     /**
@@ -193,18 +220,16 @@ public class FECUtil {
      * @param m index of the parity block
      */
     private static void recoverDataBlock(final Block[] blocks, int x, int m){
-        assert blocks[x].getType().equals(BlockInfo.Type.DATA);
-
-        byte b0[] = blocks[m].getBuffer().array().clone();
+        byte[] dx = blocks[m].getBuffer().array().clone();
         for (int i = 0; i < m; i++) {
             if (i != x){
                 byte[] b1 = blocks[i].getBuffer().array();
-                for (int i1 = 0; i1 < b0.length; i1++) {
-                    b0[i1] = GF.getInstance().sum(b0[i1], b1[i1]);
+                for (int i1 = 0; i1 < dx.length; i1++) {
+                    dx[i1] = GF.getInstance().sum(dx[i1], b1[i1]);
                 }
             }
         }
-        blocks[x] = new Block(b0, BlockInfo.Type.DATA, x);
+        blocks[x] = new Block(blocks[x].getInfo(), dx);
     }
 
     /**
@@ -214,8 +239,9 @@ public class FECUtil {
      * @param m index of the rs block
      */
     private static void recoverDataBlockNoParity(Block[] blocks, int x, int m) {
-        Arrays.fill(blocks[x].getBuffer().array(),(byte) 0);
         byte[] dx = new byte[blocks[0].getLength()];
+        blocks[x] = new Block(blocks[x].getInfo(), dx);
+
         byte[] rs = blocks[m].getBuffer().array();
         // Reed Solomon block with missing block as {0,...,0}
         byte[] rs_ = rsBlock(blocks, m, m - 1).getBuffer().array();
@@ -226,7 +252,8 @@ public class FECUtil {
             dx[i] = gf.div( gf.sum(rs[i], rs_[i]), g);
         }
 
-        blocks[x] = new Block(dx, BlockInfo.Type.DATA, x);
+        blocks[x] = new Block(blocks[x].getInfo(), dx);
+        assert FileUtil.check(blocks[x].getBuffer(), blocks[x].getChecksum());
     }
 
     private static byte[] calcA(int x, int y, int size){
@@ -260,19 +287,20 @@ public class FECUtil {
      * @param m index of the parity block
      */
     private static void recoverDataBlocks(Block[] blocks, int x, int y, int m) {
-        Arrays.fill(blocks[x].getBuffer().array(),(byte) 0);
-        Arrays.fill(blocks[y].getBuffer().array(),(byte) 0);
+        int length = blocks[0].getLength();
+
+        byte[] dx = new byte[length];
+        byte[] dy = new byte[length];
+        blocks[x] = new Block(blocks[x].getInfo(), dx);
+        blocks[y] = new Block(blocks[y].getInfo(), dy);
+
         byte[] rs_ = rsBlock(blocks, m + 1, m).getBuffer().array();
         byte[] rs = blocks[m + 1].getBuffer().array();
         byte[] p_ = parityBlock(blocks, m, m).getBuffer().array();
         byte[] p = blocks[m].getBuffer().array();
 
-        int length = blocks[0].getLength();
         byte[] a = calcA(x, y, length);
         byte[] b = calcB(x, y, length);
-
-        byte[] dx = new byte[length];
-        byte[] dy = new byte[length];
 
         GF gf = GF.getInstance();
 
@@ -289,9 +317,8 @@ public class FECUtil {
         for (int i = 0; i < dy.length; i++) {
             dy[i] = gf.sum(dx[i], p_[i]);
         }
-        
-        blocks[x] = new Block(dx, BlockInfo.Type.DATA, x);
-        blocks[y] = new Block(dy, BlockInfo.Type.DATA, y);
-    }
 
+        blocks[x] = new Block(blocks[x].getInfo(), dx);
+        blocks[y] = new Block(blocks[y].getInfo(), dy);
+    }
 }

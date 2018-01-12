@@ -12,12 +12,22 @@ public class Block {
     private  final ByteBuffer buffer;
     private final BlockInfo info;
 
-    public Block(byte bytes[], BlockInfo.Type type, int index) {
+    public Block(byte bytes[], BlockInfo.Type type, int index, int length) {
         buffer = ByteBuffer.allocate(bytes.length);
         buffer.put(bytes);
         buffer.rewind();
-        info = new BlockInfo(FileUtil.checksum(buffer), type, index, bytes.length);
+        info = new BlockInfo(FileUtil.checksum(buffer), type, index, bytes.length, length);
         buffer.rewind();
+    }
+
+    public Block(BlockInfo info, ByteBuffer buffer) {
+        this.info = info;
+        this.buffer = buffer;
+    }
+
+    public Block(BlockInfo info, byte[] dx) {
+        this.info = info;
+        this.buffer = ByteBuffer.wrap(dx);
     }
 
     public ByteBuffer getBuffer() {
@@ -43,5 +53,9 @@ public class Block {
 
     public BlockInfo getInfo() {
         return info;
+    }
+
+    public int getRealLength() {
+        return info.getRealLength();
     }
 }
