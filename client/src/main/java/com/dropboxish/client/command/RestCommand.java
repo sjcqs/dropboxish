@@ -28,15 +28,28 @@ abstract class RestCommand extends Command {
         this.method = method;
     }
 
+    protected RestCommand(String name, User user, String path, String method, boolean thread) {
+        super(name, user, thread);
+        this.path = path;
+        this.method = method;
+    }
+
     protected String sendRequest(){
         return sendRequest(null);
     }
 
-    protected String sendRequest(Map<String, String> params){
+    protected String sendRequest(Map<String, String> params)
+            throws CommandIllegalArgumentException{
         RequestManager manager = getUser().getRequestManager();
         Response response = manager.sendRequest(path, params, method);
         Response.StatusType status = response.getStatusInfo();
 
+        checkStatus(status, manager, response);
+        return response.readEntity(String.class);
+    }
+
+    private void checkStatus(Response.StatusType status, RequestManager manager, Response response)
+            throws CommandIllegalArgumentException{
         if (!status.getFamily().equals(Response.Status.Family.SUCCESSFUL)){
             if (status.getStatusCode() == 401){
                 logger.info("Disconnected");
@@ -44,6 +57,16 @@ abstract class RestCommand extends Command {
             }
             throw new CommandIllegalArgumentException(response.readEntity(String.class));
         }
-        return response.readEntity(String.class);
     }
+
+    protected Response sendRequest2(Map<String, String> params)
+            throws CommandIllegalArgumentException{
+        RequestManager manager = getUser().getRequestManager();
+        Response response = manager.sendRequest(path, params, method);
+        Response.StatusType status = response.getStatusInfo();
+        checkStatus(status, manager, response);
+        return response;
+    }
+
+    public void check(){}
 }

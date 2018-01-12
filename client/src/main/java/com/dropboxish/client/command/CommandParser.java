@@ -58,14 +58,18 @@ public class CommandParser {
     }
 
     private Command parse(List<String> args){
-        Command command = commands.get(args.get(0));
-        if (command == null){
-            command = new CommandNotFound();
+        if (args.size() == 0){
+            return new CommandNotFound();
+        } else {
+            Command command = commands.get(args.get(0));
+            if (command == null) {
+                command = new CommandNotFound();
+            }
+            command.clearArgs();
+            if (args.size() > 1) {
+                command.setArgs(args.subList(1, args.size()));
+            }
+            return command;
         }
-        command.clearArgs();
-        if (args.size() > 1){
-            command.setArgs(args.subList(1,args.size()));
-        }
-        return command;
     }
 }

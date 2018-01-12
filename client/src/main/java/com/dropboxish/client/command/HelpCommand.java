@@ -23,6 +23,10 @@ public class HelpCommand extends Command {
     }
 
     @Override
+    public void check() {
+    }
+
+    @Override
     public void help() {
         ConsoleUtils.printShifted("help", "Print this");
     }

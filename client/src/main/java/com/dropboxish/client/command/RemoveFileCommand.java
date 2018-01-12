@@ -2,6 +2,7 @@ package com.dropboxish.client.command;
 
 import com.dropboxish.client.User;
 import com.dropboxish.client.utils.ConsoleUtils;
+import com.dropboxish.model.utils.GsonUtil;
 import com.google.gson.Gson;
 
 import javax.ws.rs.HttpMethod;
@@ -31,8 +32,19 @@ public class RemoveFileCommand extends RestCommand {
         params.put("filenames", filenames);
 
         String response = sendRequest(params);
-        ConsoleUtils.printDebug(response);
-        // TODO TREAT RESULT
+
+        Map<String, Boolean> results =
+                GsonUtil.GSON.fromJson(response, GsonUtil.MAP_STRING_BOOLEAN_TYPE);
+
+        ConsoleUtils.printTitle("REMOVE");
+        for (Map.Entry<String, Boolean> entry : results.entrySet()) {
+            if (entry.getValue()){
+                ConsoleUtils.printShifted(entry.getKey(), "removed.");
+            } else {
+                ConsoleUtils.printShifted(entry.getKey(), "not found");
+            }
+        }
+
     }
 
     @Override

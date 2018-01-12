@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.dropboxish.controller.proto";
+option java_outer_classname = "ControllerProto";
+option objc_class_prefix = "CTP";
+
+package controller;
+
+service Controller {
+    rpc PutFile(stream File) returns(OperationStatus) {}
+    rpc GetFile(Metadata) returns(stream File) {}
+    rpc DeleteFile(Metadata) returns(OperationStatus) {}
+    rpc GetLeader(Subscription) returns(stream Leader) {}
+}
+
+
+message Metadata {
+    string filename = 1;
+    int64 length = 2;
+    string checksum = 3;
+    string owner = 4;
+}
+
+message Data {
+    bytes data = 1;
+    int32 length = 2;
+}
+
+message File {
+    oneof file_oneof{
+        Metadata metadata = 1;
+        Data data = 2;
+    }
+}
+
+message OperationStatus{
+    string reason = 1;
+    enum Status {
+        UNKNOWN = 0;
+        OK = 1;
+        FAILED = 2;
+    }
+    Status status = 2;
+}
+
+message Subscription{
+}
+
+message Leader{
+}

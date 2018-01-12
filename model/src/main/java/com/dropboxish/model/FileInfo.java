@@ -1,11 +1,10 @@
 package com.dropboxish.model;
 
-import com.dropboxish.model.interfaces.JsonSerializable;
-
 /**
  * Created by satyan on 12/6/17.
+ *
  */
-public class FileInfo implements JsonSerializable<FileInfo> {
+public class FileInfo {
     private final String filename;
     private final long size;
     private final String checksum;
@@ -35,12 +34,7 @@ public class FileInfo implements JsonSerializable<FileInfo> {
     }
 
     @Override
-    public String toJson() {
-        return null;
-    }
-
-    @Override
-    public FileInfo fromJson(String json) {
-        return null;
+    public String toString() {
+        return String.format("%s: %s, %s, %d", filename, checksum, owner, size);
     }
 }

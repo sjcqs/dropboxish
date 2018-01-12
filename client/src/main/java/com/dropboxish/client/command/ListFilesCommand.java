@@ -3,7 +3,7 @@ package com.dropboxish.client.command;
 import com.dropboxish.client.User;
 import com.dropboxish.client.utils.ConsoleUtils;
 import com.dropboxish.model.FileInfo;
-import com.dropboxish.model.utils.FileUtils;
+import com.dropboxish.model.utils.FileUtil;
 
 import javax.ws.rs.HttpMethod;
 import java.util.List;
@@ -22,7 +22,7 @@ public class ListFilesCommand extends RestCommand {
     public void run() throws CommandIllegalArgumentException {
         String response = sendRequest();
         if (response != null){
-            List<FileInfo> files = FileUtils.deserializeList(response);
+            List<FileInfo> files = FileUtil.deserializeList(response);
             ConsoleUtils.printTitle("LIST");
             if (files.isEmpty()){
                 ConsoleUtils.printShifted("No files.");

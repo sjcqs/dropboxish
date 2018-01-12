@@ -1,0 +1,7 @@
+dependencies {
+    compile project(':model')
+
+    compile 'org.glassfish.jersey.core:jersey-client:2.7'
+    compile 'org.glassfish.jersey.security:oauth2-client:2.7'
+    compile 'org.glassfish.jersey.media:jersey-media-multipart:2.7'
+}

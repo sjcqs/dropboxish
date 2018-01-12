@@ -52,6 +52,10 @@ public class ConsoleUtils {
         System.out.print(prompt + " ");
     }
 
+    public static void printPrompt() {
+        System.out.print("> ");
+    }
+
     public static void print(String title, String...lines) {
         printTitle(title);
         printLines(1,lines);

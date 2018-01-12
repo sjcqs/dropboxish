@@ -84,7 +84,7 @@ public class RequestManager implements Stoppable {
         ConsoleUtils.printShifted("You need to login before using the application.");
         while (!stopped && !isConnected()) {
             try {
-                ConsoleUtils.printPrompt(">");
+                ConsoleUtils.printPrompt();
                 command = parser.readCommand();
                 if (command != null) {
                     command.run();

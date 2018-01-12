@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.dropboxish.pool.proto";
+option java_outer_classname = "PoolProto";
+option objc_class_prefix = "PLP";
+
+package pool;
+
+service Pool {
+    rpc GetBlock(BlockRequest) returns(stream Block) {};
+    rpc PutBlock(stream Block) returns(OperationStatus) {};
+    rpc DeleteBlock(BlockRequest) returns(OperationStatus) {}
+}
+
+message BlockRequest {
+    string checksum = 1;
+}
+
+message Block{
+    oneof block_oneof{
+        Metadata metadata = 1;
+        Data data = 2;
+    }
+}
+
+message Metadata {
+    int64 length = 1;
+    string checksum = 2;
+}
+
+message Data {
+    bytes data = 1;
+    int32 length = 2;
+}
+
+message OperationStatus{
+    string reason = 1;
+    enum Status {
+        OK = 0;
+        FAILED = 1;
+        UNKNOWN = 2;
+    }
+    Status status = 2;
+}

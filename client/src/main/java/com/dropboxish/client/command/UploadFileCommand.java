@@ -3,7 +3,7 @@ package com.dropboxish.client.command;
 import com.dropboxish.client.User;
 import com.dropboxish.client.utils.ConsoleUtils;
 import com.dropboxish.client.utils.RequestManager;
-import com.dropboxish.model.utils.FileUtils;
+import com.dropboxish.model.utils.FileUtil;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.glassfish.jersey.media.multipart.MultiPart;
@@ -26,21 +26,13 @@ public class UploadFileCommand extends RestCommand {
     private final static String PATH = "/file/upload";
 
     public UploadFileCommand(User user){
-        super("upload", user, PATH, HttpMethod.POST);
+        super("upload", user, PATH, HttpMethod.POST, true);
     }
 
     @Override
     public void run() throws CommandIllegalArgumentException {
-        if (args.size() != 1){
-            throw new CommandIllegalArgumentException("File to upload not provided.","usage: upload FILE");
-        }
         String filePath = args.get(0);
         Path file = Paths.get(filePath);
-
-        if (!Files.exists(file) || !Files.isRegularFile(file)){
-            throw new CommandIllegalArgumentException(filePath + " file doesn't exist or is a directory.");
-        }
-
         RequestManager rm = getUser().getRequestManager();
 
         try {
@@ -55,7 +47,7 @@ public class UploadFileCommand extends RestCommand {
                     .size(Files.size(file))
                     .build()
             );
-            String checksum = FileUtils.checksum(file);
+            String checksum = FileUtil.checksum(file);
             MultiPart multiPart = new FormDataMultiPart()
                     .field("checksum", checksum)
                     .bodyPart(bodyPart);
@@ -75,9 +67,24 @@ public class UploadFileCommand extends RestCommand {
 
             String str = response.readEntity(String.class);
             ConsoleUtils.print("UPLOAD", str);
-        } catch (IOException e) {
-            throw new CommandIllegalArgumentException("File couldn't be read.");
+        } catch (IOException | CommandIllegalArgumentException e) {
+            ConsoleUtils.printError(filePath + " couldn't be uploaded");
         }
+        ConsoleUtils.printPrompt();
+    }
+
+    @Override
+    public void check() {
+        if (args.size() != 1){
+            throw new CommandIllegalArgumentException("File to upload not provided.","usage: upload FILE");
+        }
+        String filePath = args.get(0);
+        Path file = Paths.get(filePath);
+
+        if (!Files.exists(file) || !Files.isRegularFile(file)){
+            throw new CommandIllegalArgumentException(filePath + " file doesn't exist or is a directory.");
+        }
+        ConsoleUtils.print("UPLOAD", filePath);
     }
 
     @Override
