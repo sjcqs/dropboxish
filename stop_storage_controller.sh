@@ -10,6 +10,6 @@ gcloud compute instances delete --quiet ${VM_NAME0}
 gcloud compute instances delete --quiet ${VM_NAME1}
 gcloud compute instances delete --quiet ${VM_NAME2}
 
-gcloud compute firewall-rules delete --quiet ${VM_NAME0}-www
-gcloud compute firewall-rules delete --quiet ${VM_NAME1}-www
-gcloud compute firewall-rules delete --quiet ${VM_NAME2}-www
+#gcloud compute firewall-rules delete --quiet ${VM_NAME0}-www
+#gcloud compute firewall-rules delete --quiet ${VM_NAME1}-www
+#gcloud compute firewall-rules delete --quiet ${VM_NAME2}-www

@@ -12,6 +12,7 @@ apt-get install openjdk-8-jdk -y
 
 mkdir /opt/gcedeploy
 
-gsutil cp gs://${BUCKET_NAME}/${JAR_NAME} /opt/gcedeploy/${JAR_NAME}
-java -jar /opt/gcedeploy/${JAR_NAME} &
+gsutil cp gs://dropboxish_deploy/app-0.0.1-SNAPSHOT.jar /opt/gcedeploy/app-0.0.1-SNAPSHOT.jar
+java -jar /opt/gcedeploy/app-0.0.1-SNAPSHOT.jar 10.132.0.8:8090 10.132.0.9:8090 10.132.0.10:8090 &
 exit
+

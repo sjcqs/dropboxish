@@ -134,6 +134,7 @@ public class FilesService {
                 return Response
                         .ok(stream, MediaType.APPLICATION_OCTET_STREAM)
                         .header("content-disposition",String.format("attachment; filename = %s", filename))
+                        .header("Content-Length", info.getSize())
                         .build();
             } else{
                 return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -163,6 +164,7 @@ public class FilesService {
             Map<String, Boolean> result =  db.removeFiles(owner, names);
 
             for (Map.Entry<String, Boolean> entry : result.entrySet()) {
+                logger.info(entry.getKey() + ":" + entry.getValue());
                 if (entry.getValue()){
                     removed.add(entry.getKey());
                 }
@@ -177,6 +179,8 @@ public class FilesService {
                     e.printStackTrace();
                 }
                 result.put(file.getFilename(), res);
+
+                logger.info(file.getFilename()+ ":" + res);
                 if (!res){
                     db.putFile(file.getFilename(), file.getChecksum(), file.getSize(), file.getOwner());
                 }

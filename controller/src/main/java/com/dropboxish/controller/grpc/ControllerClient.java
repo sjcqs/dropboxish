@@ -123,6 +123,7 @@ public class ControllerClient {
         Metadata metadata = Metadata.newBuilder()
                 .setFilename(file.getFilename())
                 .setChecksum(file.getChecksum())
+                .setOwner(file.getOwner())
                 .setLength(file.getSize())
                 .build();
         return blockingStub.deleteFile(metadata).getStatus().equals(OperationStatus.Status.OK);

@@ -164,8 +164,8 @@ public class Controller extends ReceiverAdapter {
         update();
     }
 
-    public FileInfo removeFile(String checksum) throws Exception {
-        FileInfo info = lastMap.remove(checksum);
+    public FileInfo removeFile(String filename, String owner) throws Exception {
+        FileInfo info = lastMap.remove(owner + ":" + filename);
         update();
 
         return info;

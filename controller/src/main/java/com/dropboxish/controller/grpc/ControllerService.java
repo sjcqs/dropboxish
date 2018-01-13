@@ -299,7 +299,7 @@ public class ControllerService extends ControllerGrpc.ControllerImplBase {
     public void deleteFile(Metadata request, StreamObserver<OperationStatus> responseObserver) {
         logger.info("Trying to remove: " + request.getFilename());
         try {
-            FileInfo info = controller.removeFile(request.getChecksum());
+            FileInfo info = controller.removeFile(request.getFilename(), request.getOwner());
             if (info == null){
                 logger.warning("File doesn't exist");
                 responseObserver.onError(new FileNotFoundException("The file doesn't exists."));

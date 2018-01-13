@@ -6,6 +6,7 @@ import org.glassfish.jersey.client.oauth2.OAuth2ClientSupport;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 import javax.ws.rs.HttpMethod;
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Invocation;
@@ -164,16 +165,20 @@ public class RequestManager implements Stoppable {
         Invocation.Builder builder = target.request(MediaType.APPLICATION_JSON);
         Response response = null;
 
-        switch (method) {
-            case HttpMethod.GET:
-                response = builder.get();
-                break;
-            case HttpMethod.POST:
-                response = builder.accept(MediaType.APPLICATION_JSON).post(null);
-                break;
-            case HttpMethod.DELETE:
-                response = builder.delete();
-                break;
+        try {
+            switch (method) {
+                case HttpMethod.GET:
+                    response = builder.get();
+                    break;
+                case HttpMethod.POST:
+                    response = builder.accept(MediaType.APPLICATION_JSON).post(null);
+                    break;
+                case HttpMethod.DELETE:
+                    response = builder.delete();
+                    break;
+            }
+        } catch (ProcessingException e){
+            throw new CommandIllegalArgumentException("Connection refused.");
         }
         return response;
     }

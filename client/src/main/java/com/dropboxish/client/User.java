@@ -116,4 +116,5 @@ public class User implements Runnable, Stoppable {
     public BufferedReader getReader() {
         return reader;
     }
+
 }

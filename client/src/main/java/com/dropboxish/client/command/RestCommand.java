@@ -67,6 +67,4 @@ abstract class RestCommand extends Command {
         checkStatus(status, manager, response);
         return response;
     }
-
-    public void check(){}
 }

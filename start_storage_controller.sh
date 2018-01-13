@@ -11,11 +11,11 @@ if [[ $# -eq 0 ]]; then
      for arg in $*; do
         case "$arg" in
             0)
-            gcloud compute instances start ${VM_NAME0};;
+            gcloud compute ssh ${VM_NAME0} --command "chmod +x run.sh && ./run.sh";;
             1)
-            gcloud compute instances start ${VM_NAME1};;
+            gcloud compute ssh ${VM_NAME1} --command "chmod +x run.sh && ./run.sh";;
             2)
-            gcloud compute instances start ${VM_NAME2};;
+            gcloud compute ssh ${VM_NAME2} --command "chmod +x run.sh && ./run.sh";;
         esac
      done
 fi

@@ -22,11 +22,11 @@ import java.nio.file.Paths;
  * Created by satyan on 11/21/17.
  * Upload a file to the cloud
  */
-public class UploadFileCommand extends RestCommand {
+public class UploadFileCommand extends LoadCommand {
     private final static String PATH = "/file/upload";
 
     public UploadFileCommand(User user){
-        super("upload", user, PATH, HttpMethod.POST, true);
+        super("upload", user, PATH, HttpMethod.POST);
     }
 
     @Override

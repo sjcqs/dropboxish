@@ -21,9 +21,9 @@ public class FilesMap implements Serializable, Comparable<FilesMap>{
         lastUpdate = new Date();
     }
 
-    public FileInfo remove(String checksum) {
+    public FileInfo remove(String key) {
         lastUpdate = new Date();
-        return files.remove(checksum);
+        return files.remove(key);
     }
 
     public FileInfo get(String filename, String owner){
