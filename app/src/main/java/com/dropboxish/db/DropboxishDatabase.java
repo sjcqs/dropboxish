@@ -42,16 +42,17 @@ public class DropboxishDatabase {
         Connection c = connect();
         Statement stmt;
         stmt = c.createStatement();
-        String up0 = "CREATE TABLE IF NOT EXISTS user( " +
+        String up0 = "CREATE TABLE IF NOT EXISTS User( " +
                 "username TEXT PRIMARY KEY     NOT NULL," +
                 "password           TEXT    NOT NULL, " +
                 "token            TEXT     NOT NULL);";
-        String up1 = "CREATE TABLE  IF NOT EXISTS file(" +
-                "filename TEXT PRIMARY KEY NOT NULL," +
+        String up1 = "CREATE TABLE  IF NOT EXISTS File(" +
+                "filename TEXT NOT NULL," +
                 "checksum TEXT NOT NULL," +
                 "size BIGINT NOT NULL CHECK (size > 0)," +
                 "owner TEXT NOT NULL," +
-                "FOREIGN KEY(owner) REFERENCES user(username));";
+                "PRIMARY KEY (filename, owner),"+
+                "FOREIGN KEY(owner) REFERENCES User(username));";
 
         stmt.executeUpdate(up0);
         stmt.executeUpdate(up1);
@@ -74,7 +75,7 @@ public class DropboxishDatabase {
         try {
             c = connect();
             st = c.prepareStatement(
-                    "SELECT username FROM user WHERE username = ?");
+                    "SELECT username FROM User WHERE username = ?");
             st.setString(1, username);
             available = !st.executeQuery().next();
         } finally {
@@ -95,7 +96,7 @@ public class DropboxishDatabase {
         try {
             c = connect();
             st = c.prepareStatement(
-                    "INSERT INTO user (username, password, token) " +
+                    "INSERT INTO User (username, password, token) " +
                             "VALUES (?, ?, ?)");
             st.setString(1, username);
             st.setString(2, password);
@@ -125,7 +126,7 @@ public class DropboxishDatabase {
         try {
             c = connect();
             st = c.prepareStatement(
-                    "SELECT username FROM user WHERE username = ? AND password = ?");
+                    "SELECT username FROM User WHERE username = ? AND password = ?");
             st.setString(1, username);
             st.setString(2, password);
 
@@ -149,7 +150,7 @@ public class DropboxishDatabase {
         try {
             c = connect();
             st = c.prepareStatement(
-                    "SELECT token FROM user WHERE username = ?");
+                    "SELECT token FROM User WHERE username = ?");
             st.setString(1, username);
 
             ResultSet set = st.executeQuery();
@@ -174,7 +175,7 @@ public class DropboxishDatabase {
         try {
             c = connect();
             st = c.prepareStatement(
-                    "SELECT username FROM user WHERE token = ?");
+                    "SELECT username FROM User WHERE token = ?");
             st.setString(1, token);
             ResultSet set = st.executeQuery();
             if (set.next()){
@@ -197,7 +198,7 @@ public class DropboxishDatabase {
         try {
             c = connect();
             st = c.prepareStatement(
-                    "UPDATE user " +
+                    "UPDATE User " +
                             "SET token = ?" +
                             "WHERE username = ?");
             st.setString(1, token);
@@ -223,7 +224,7 @@ public class DropboxishDatabase {
             c = connect();
             st = c.createStatement();
 
-            int affected = st.executeUpdate("DELETE FROM user;");
+            int affected = st.executeUpdate("DELETE FROM User;");
             c.commit();
             return affected;
         } finally {
@@ -239,9 +240,9 @@ public class DropboxishDatabase {
     public void putFile(String filename, String checksum, long size, String owner) throws SQLException {
         Connection c = connect();
         PreparedStatement update = c.prepareStatement(
-                "UPDATE file SET checksum = ?, size = ?, owner = ? WHERE filename = ?");
+                "UPDATE File SET checksum = ?, size = ?, owner = ? WHERE filename = ?");
         PreparedStatement insert = c.prepareStatement(
-                "INSERT INTO file (filename, checksum, size, owner) VALUES (?, ?, ?, ?)");
+                "INSERT INTO File (filename, checksum, size, owner) VALUES (?, ?, ?, ?)");
 
         update.setString(4, filename);
         insert.setString(1, filename);
@@ -275,7 +276,7 @@ public class DropboxishDatabase {
             List<FileInfo> results;
             c = connect();
             statement = c.prepareStatement(
-                    "SELECT * FROM file WHERE owner = ?"
+                    "SELECT * FROM File WHERE owner = ?"
             );
             statement.setString(1, owner);
 
@@ -309,7 +310,7 @@ public class DropboxishDatabase {
             con = connect();
             for (String name : names) {
                 PreparedStatement st = con.prepareStatement(
-                    "DELETE FROM file WHERE filename = ? AND owner = ?"
+                    "DELETE FROM File WHERE filename = ? AND owner = ?"
                 );
                 st.setString(1, name);
                 st.setString(2, owner);
@@ -342,7 +343,7 @@ public class DropboxishDatabase {
             FileInfo result = null;
             c = connect();
             st = c.prepareStatement(
-                    "SELECT * FROM file WHERE owner = ? AND filename = ?"
+                    "SELECT * FROM File WHERE owner = ? AND filename = ?"
             );
             st.setString(1, owner);
             st.setString(2, filename);
